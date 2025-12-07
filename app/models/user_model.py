@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 from pydantic import EmailStr
 from datetime import datetime, timezone
 import ulid
@@ -38,6 +38,8 @@ class User(SQLModel, table=True):
     created_ts: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_ts: datetime = Field(default=None, nullable=True)
     last_login: Optional[datetime] = Field(default=None, index=True)
+    
+    student_info: Optional["StudentInfo"] = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False})
 
     def set_password(self, raw_password: str):
         self.password = hash_password(raw_password)

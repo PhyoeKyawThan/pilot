@@ -4,6 +4,7 @@ from app.models.database import engine
 from sqlmodel import SQLModel
 from contextlib import asynccontextmanager
 from app.routers.auth import auth
+from app.routers.student import student
 from fastapi_jwt_auth2 import AuthJWT
 from fastapi_jwt_auth2.exceptions import AuthJWTException
 from pydantic import BaseModel
@@ -46,3 +47,4 @@ app.add_middleware(
 )
 
 app.include_router(auth)
+app.include_router(student)

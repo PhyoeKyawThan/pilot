@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 from pydantic import BaseModel, Field
 from sqlmodel import select
 from app.dependencies import get_session, get_settings
 from app.config import Config
-from app.models.user import User, UserRole
+from app.models.user_model import User, UserRole
+from app.models.student_model import StudentInfo
 from typing import Annotated
 from fastapi_jwt_auth2 import AuthJWT
 from fastapi_jwt_auth2.exceptions import AuthJWTException
@@ -87,11 +89,19 @@ async def login(
     if found_user:
         if(found_user.verify_password(user.password)):
             token_scheme: TokenSchema = TokenSchema(
-                access_token=Authorize.create_access_token(subject=found_user.user_id),
-                refresh_token=Authorize.create_refresh_token(subject=user.username+user.email)
+                access_token=Authorize.create_access_token(
+                    subject=found_user.user_id, 
+                    user_claims={
+                    "role": found_user.user_role
+                }),
+                refresh_token=Authorize.create_refresh_token(
+                    subject=user.username+user.email,
+                    user_claims={
+                    "role": found_user.user_role
+                })
             )
-            request.session['user_id'] = found_user.user_id
-            request.session['user_role'] = found_user.user_role
+            # request.session['user_id'] = found_user.user_id
+            # request.session['user_role'] = found_user.user_role
             Authorize.set_access_cookies(
                 token_scheme.access_token, 
                 response=response,
@@ -136,14 +146,22 @@ def refresh(config: Annotated[Config, Depends(get_settings)], request: Request, 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server Error"
-        ) 
+        )
+class ProtectedResponseSchema(BaseModel):
+    user: User
+    student_info: StudentInfo 
 @auth.get("/protected")
-def protected(Authorize: AuthJWT = Depends()):
+async def protected(dbSession: Annotated[AsyncSession, Depends(get_session)],Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     
-    current_user= Authorize.get_jwt_subject()
-    return current_user
-
+    current_user_id= Authorize.get_jwt_subject()
+    stmt = select(User).options(selectinload(User.student_info)).where(User.user_id == current_user_id)
+    result = await dbSession.execute(stmt)
+    user: User = result.scalar_one_or_none()
+    return ProtectedResponseSchema(
+        user=user,
+        student_info=user.student_info
+    )
 # @auth.get("/settings")
 # def settings(settings: Annotated[Config, Depends(get_settings)]):
     # return settings
