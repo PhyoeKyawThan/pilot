@@ -8,6 +8,7 @@ from fastapi_jwt_auth2 import AuthJWT
 from fastapi_jwt_auth2.exceptions import AuthJWTException
 from pydantic import BaseModel
 from app.config import config
+from starlette.middleware.sessions import SessionMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,5 +38,11 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
             "detail": str(exc)
         }
     )
+
+# middlewares
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=config.SESSION_SECRET
+)
 
 app.include_router(auth)

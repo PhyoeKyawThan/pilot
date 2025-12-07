@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 import ulid
 from passlib.context import CryptContext
 from typing import Optional
+from enum import Enum
+from sqlalchemy import Enum as SAEnum
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -12,6 +14,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+class UserRole(str, Enum):
+    ADMIN: str = "admin"
+    TEACHER: str = "teacher"
+    STUDENT: str = "student"
 
 class User(SQLModel, table=True):
     __tablename__ = "user"
@@ -27,6 +33,8 @@ class User(SQLModel, table=True):
     email: EmailStr = Field(nullable=False, unique=True)
     password: str = Field(nullable=False)
 
+    user_role: UserRole = Field(sa_column=SAEnum(UserRole, "user_role"))
+    
     created_ts: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_ts: datetime = Field(default=None, nullable=True)
     last_login: Optional[datetime] = Field(default=None, index=True)

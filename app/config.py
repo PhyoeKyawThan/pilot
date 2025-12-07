@@ -9,7 +9,7 @@ class Config(BaseSettings):
     AUTHJWT_COOKIE_CSRF_PROTECT: bool
     AUTHJWT_ACCESS_EXPIRE_HOUR: int 
     AUTHJWT_REFRESH_EXPIRE_DAY: int
-
+    SESSION_SECRET: str
     model_config = SettingsConfigDict(env_file=".env")
     
 config = Config()
