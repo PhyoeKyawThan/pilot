@@ -39,7 +39,7 @@ class User(SQLModel, table=True):
     updated_ts: datetime = Field(default=None, nullable=True)
     last_login: Optional[datetime] = Field(default=None, index=True)
     
-    student_info: Optional["StudentInfo"] = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False})
+    student_info: Optional["StudentInfo"] = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False}) # type: ignore
 
     def set_password(self, raw_password: str):
         self.password = hash_password(raw_password)

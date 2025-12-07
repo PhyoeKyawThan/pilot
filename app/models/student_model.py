@@ -16,4 +16,4 @@ class StudentInfo(SQLModel, table=True):
     mother_name: str = Field(sa_column=Column(String(100), nullable=False))
     nrc: str = Field(sa_column=Column(String(25), nullable=False))
     
-    user: Optional["User"] = Relationship(back_populates="student_info")
+    user: Optional["User"] = Relationship(back_populates="student_info") # type: ignore
