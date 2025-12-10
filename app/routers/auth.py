@@ -85,9 +85,10 @@ async def login(
                 detail="User Already Logged in"
             )
     result = await dbSession.execute(select(User).where(User.email == user.email))
-    found_user: User = result.scalars().first()
+    found_user: User | None = result.scalars().first()
     if found_user:
         if(found_user.verify_password(user.password)):
+            subject: str = f"{user.username}{user.email}"
             token_scheme: TokenSchema = TokenSchema(
                 access_token=Authorize.create_access_token(
                     subject=found_user.user_id, 
@@ -95,7 +96,7 @@ async def login(
                     "role": found_user.user_role
                 }),
                 refresh_token=Authorize.create_refresh_token(
-                    subject=user.username+user.email,
+                    subject=subject,
                     user_claims={
                     "role": found_user.user_role
                 })
@@ -115,11 +116,11 @@ async def login(
                 status_code=status.HTTP_200_OK,
                 message="User Verified!"
             )
-        return ResponseSchema(
-            status_code=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
-            message="Incorrect Username or Password!",
-            err_message="Incorrect Username or Password"
-        )
+    return ResponseSchema(
+        status_code=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
+        message="Incorrect Username or Password!",
+        err_message="Incorrect Username or Password"
+    )
 
     
 @auth.post("/refresh")
@@ -162,7 +163,3 @@ async def protected(dbSession: Annotated[AsyncSession, Depends(get_session)],Aut
         user=user,
         student_info=user.student_info
     )
-# @auth.get("/settings")
-# def settings(settings: Annotated[Config, Depends(get_settings)]):
-    # return settings
-    # 
